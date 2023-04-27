@@ -236,6 +236,38 @@ CONFIG_MAP['nade-drums_2bar_full'] = Config(
     eval_examples_path=None,
 )
 
+# Drums 4bar (과제)
+# 모델은 4종류로 크게 categorical LSTM(small, big) , nade LSTM(reduced, full)로 나뉜다.
+# small과 big은 모델의 크기가 다름
+# reduced와 full은 pitch_classes에서 차이가 나는데 정확히 어떤 차이인지 모르겠으나 음의 높이 제한이라 생각됨.
+# 시간을 고려해 모델이 가장 작은 small 한가지만 구현
+
+CONFIG_MAP['cat-drums_4bar_small'] = Config(
+    model=MusicVAE(lstm_models.BidirectionalLstmEncoder(),
+                   lstm_models.CategoricalLstmDecoder()),
+    hparams=merge_hparams(
+        lstm_models.get_default_hparams(),
+        HParams(
+            batch_size=512,
+            max_seq_len=64,  # 4 bars w/ 16 steps per bar 
+            z_size=256,
+            enc_rnn_size=[512],
+            dec_rnn_size=[256, 256],
+            free_bits=48,
+            max_beta=0.2,
+            sampling_schedule='inverse_sigmoid',
+            sampling_rate=1000,
+        )),
+    note_sequence_augmenter=None,
+    data_converter=data.DrumsConverter(
+        max_bars=100,  # Truncate long drum sequences before slicing.
+        slice_bars=2,
+        steps_per_quarter=4,
+        roll_input=True),
+    train_examples_path=None,
+    eval_examples_path=None,
+)
+
 # Trio Models
 trio_16bar_converter = data.TrioConverter(
     steps_per_quarter=4,
